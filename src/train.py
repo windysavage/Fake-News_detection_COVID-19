@@ -5,8 +5,11 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
+from transformers import BertTokenizerFast, AutoModel
 
+from const import special_tokens, topics
 from utils.utils import print_environment_info
+from utils.datasets import SloganDataset
 
 stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setLevel(logging.INFO)
@@ -48,6 +51,14 @@ def run():
 
     train_df = pd.read_csv(str(Path(args.data)) + "/train.csv")
     test_df = pd.read_csv(str(Path(args.data)) + "/test.csv")
+
+    tokenizer = BertTokenizerFast.from_pretrained("bert-base-chinese")
+    bert = AutoModel.from_pretrained("ckiplab/bert-base-chinese")
+    tokenizer.add_special_tokens(
+        {'additional_special_tokens': list(special_tokens.values()) + topics})
+
+    train_ds = SloganDataset(data=train_df, tokenizer=tokenizer)
+    test_ds = SloganDataset(data=test_df, tokenizer=tokenizer)
 
 
 if __name__ == "__main__":
