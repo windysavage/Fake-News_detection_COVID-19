@@ -70,7 +70,7 @@ def run():
     bert.resize_token_embeddings(len(tokenizer))
 
     train_ds = SloganDataset(data=train_df.head(50), tokenizer=tokenizer)
-    test_ds = SloganDataset(data=test_df, tokenizer=tokenizer)
+    test_ds = SloganDataset(data=test_df.head(10), tokenizer=tokenizer)
 
     model = FinetuneBert(bert)
     model = model.to(device)

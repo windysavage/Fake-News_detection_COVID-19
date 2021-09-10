@@ -18,18 +18,18 @@ class Trainer(object):
         self.model = model
         self.device = device
 
+        self.THRESHOLD = 0.5
+
     def train(self):
-        # 使用 Adam Optim 更新整個分類模型的參數
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
         loss_f = nn.BCELoss()
 
-        THRESHOLD = 0.5
-        epoch_loss = 0
-        epoch_num = 0
-        epoch_correct_num = 0
-
         for epoch in range(self.epochs):
             self.model.train()
+
+            epoch_loss = 0
+            epoch_num = 0
+            epoch_correct_num = 0
             epoch_labels = []
             epoch_preds = []
 
@@ -40,29 +40,58 @@ class Trainer(object):
                 y = y.to(self.device).to(dtype=torch.float)
                 y = y.unsqueeze(1)
 
-                # 將參數梯度歸零
                 optimizer.zero_grad()
 
-                # forward pass
                 preds = self.model(x)
                 loss = loss_f(preds, y)
 
                 epoch_labels.extend(y.tolist())
 
-                # backward
                 loss.backward()
                 optimizer.step()
 
-                # 紀錄當前 batch loss
                 epoch_loss += loss.item()
                 epoch_num += x.size()[0]
 
-                # 計算分類準確率
-                preds = torch.gt(preds, THRESHOLD).to(dtype=torch.float)
+                preds = torch.gt(preds, self.THRESHOLD).to(dtype=torch.float)
                 epoch_preds.extend(preds.tolist())
                 epoch_correct_num += (preds == y).sum().item()
 
             epoch_f1 = f1_score(epoch_labels, epoch_preds)
             print(
                 f"\nEpoch: {epoch+1}, Loss: {round(epoch_loss/epoch_num, 2)}, Acc: {round(epoch_correct_num/epoch_num, 2)}, F1_score: {round(epoch_f1, 2)}")
-            # f1_test = test(model, test_dataloader)
+
+            self.test(epoch, loss_f)
+
+    def test(self, epoch, loss_f):
+        self.model.eval()
+
+        epoch_loss = 0
+        epoch_num = 0
+        epoch_correct_num = 0
+
+        epoch_labels = []
+        epoch_preds = []
+
+        with torch.no_grad():
+            for x, y in tqdm(iter(self.test_dataloader)):
+                x = x["input_ids"].squeeze(1)
+
+                x = x.to(self.device)
+                y = y.to(self.device).to(dtype=torch.float)
+                y = y.unsqueeze(1)
+
+                preds = self.model(x)
+                loss = loss_f(preds, y)
+                epoch_labels.extend(y.tolist())
+
+                epoch_loss += loss.item()
+                epoch_num += x.size()[0]
+
+                preds = torch.gt(preds, self.THRESHOLD).to(dtype=torch.float)
+                epoch_preds.extend(preds.tolist())
+                epoch_correct_num += (preds == y).sum().item()
+
+            epoch_f1 = f1_score(epoch_labels, epoch_preds)
+            print(
+                f"\nEpoch: {epoch+1}, Loss: {round(epoch_loss/epoch_num, 2)}, Acc: {round(epoch_correct_num/epoch_num, 2)}, F1_score: {round(epoch_f1, 2)}")
