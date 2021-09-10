@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 
 class SloganDataset(Dataset):
     def __init__(self, data, tokenizer):
-        self.data = data.head(3)
+        self.data = data
 
         self.xs = list(self.data["slogan"])
         self.xs = [tokenizer.encode_plus(
