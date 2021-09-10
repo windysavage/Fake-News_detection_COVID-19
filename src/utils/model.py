@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-class FinetuneBert(nn.module):
+class FinetuneBert(nn.Module):
     def __init__(self, bert):
         super(FinetuneBert, self).__init__()
         self.bert = bert

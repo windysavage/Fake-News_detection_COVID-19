@@ -23,6 +23,7 @@ logging.basicConfig(
     handlers=handlers)
 
 logger = logging.getLogger(__name__)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def cli():
@@ -36,7 +37,7 @@ def cli():
     parser.add_argument("-b", "--batch", type=int,
                         default=5, help="Batch size")
     parser.add_argument("-e", "--epochs", type=int,
-                        default=20, help="Number of epochs")
+                        default=1, help="Number of epochs")
     parser.add_argument("-l", "--lr", type=float,
                         default=1e-4, help="Learning rate")
     parser.add_argument("--checkpoint_interval", type=int, default=1,
@@ -68,8 +69,8 @@ def run():
         {'additional_special_tokens': list(special_tokens.values()) + topics})
     bert.resize_token_embeddings(len(tokenizer))
 
-    train_ds = SloganDataset(data=train_df, tokenizer=tokenizer)
-    test_ds = SloganDataset(data=test_df, tokenizer=tokenizer)
+    train_ds = SloganDataset(data=train_df.head(50), tokenizer=tokenizer)
+    test_ds = SloganDataset(data=test_df.head(10), tokenizer=tokenizer)
 
     model = FinetuneBert(bert)
     model = model.to(device)
@@ -80,7 +81,13 @@ def run():
         "lr": args.lr
     }
 
-    trainer = Trainer(hparams=hparams, train_ds=train_ds, test_ds=test_ds)
+    trainer = Trainer(
+        hparams=hparams,
+        train_ds=train_ds,
+        test_ds=test_ds,
+        model=model,
+        device=device
+    )
     trainer.train()
 
 
