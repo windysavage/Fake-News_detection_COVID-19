@@ -9,7 +9,6 @@ class SloganDataset(Dataset):
         self.xs = list(self.data["slogan"])
         self.xs = [tokenizer.encode_plus(
             x, max_length=64, truncation=True, padding="max_length", return_tensors="pt") for x in self.xs]
-        # self.xs = [torch.tensor(x) for x in self.xs]
 
         self.ys = list(self.data.label)
         self.ys = [torch.tensor(y) for y in self.ys]
